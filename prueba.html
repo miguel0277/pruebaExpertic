@@ -18,7 +18,7 @@ instrucciones y mantener la estructura adecuada al editar el contenido." -->
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Circuitos Eléctricos I. L1.2</title>
+  <title id="page-title">Circuitos Eléctricos I</title>
   <!-- <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
   <script id="MathJax-script" async="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script> -->
 
@@ -439,13 +439,10 @@ instrucciones y mantener la estructura adecuada al editar el contenido." -->
         Industrial de
         Santander</p>
 
-      <h4 class="editable" style="color: #085294; font-family: garamond; font-size: 20px;">
-        Módulo 1. Circuitos de Orden Cero
-        <br> Lección 1.1 Leyes de tensión y de corriente
-      </h4>
+      <h4 id="leccion-info" class="editable" style="color: #085294; font-family: garamond; font-size: 20px;"></h4>
 
 
-      <a href="https://expertic.uis.edu.co/Module/21619_01-m1/21619" class="button-link editable">
+      <a id="modulo-link" href="#" class="button-link editable">
         Volver al módulo
       </a>
     </div>
@@ -545,8 +542,7 @@ instrucciones y mantener la estructura adecuada al editar el contenido." -->
     <details>
       <summary class="editable">2. Profundización de la lección</summary>
       <div class="content-container">
-        <h1 class="editable">L1.2 Leyes de tensión
-          y de corriente</h1>
+        <h1 id="leccion-title" class="editable"></h1>
         <div class="topics">
           <div class="topic">
             <h2 class="editable">(T1) Conceptos básicos: </h2>
@@ -693,7 +689,7 @@ instrucciones y mantener la estructura adecuada al editar el contenido." -->
       <img src="https://expertic.uis.edu.co/assets/expertic-logo.png" alt="Footer Logo" style="height: 40px;">
     </div>
 <div style="text-align: center; margin-bottom: 2em;">
-    <a href="https://expertic.uis.edu.co/lesson/21619_01-M1L1/21619" target="_blank" style="display: inline-block; padding: 10px 20px; background-color: #005aa7; color: white; text-decoration: none; border-radius: 5px; font-size: 1rem;">
+    <a id="leccion-link" href="#" target="_blank" style="display: inline-block; padding: 10px 20px; background-color: #005aa7; color: white; text-decoration: none; border-radius: 5px; font-size: 1rem;">
       Ver página en nueva pestaña
     </a>
   </div>
@@ -718,13 +714,17 @@ instrucciones y mantener la estructura adecuada al editar el contenido." -->
   <script>
     (function () {
       const SHEET_BASE = 'https://opensheet.elk.sh/1fySXpMmnvDBngZG1HZwOc9OIdQ38J7HcvV7TtQLJoWw';
+      const params = new URLSearchParams(window.location.search);
+      const leccionActual = params.get('leccion') || 'L1.1';
       // Permite override por window.SHEETS_ENDPOINTS si se define en otra parte
       const DEFAULT_ENDPOINTS = {
         videos: SHEET_BASE + '/videos',
         simuladores: SHEET_BASE + '/simuladores',
         libros: SHEET_BASE + '/libros',
         // Fuente de Conceptos (bibliografías)
-        conceptos: SHEET_BASE + '/bibliografia'
+        conceptos: SHEET_BASE + '/bibliografia',
+        // Metadatos de lecciones
+        lecciones: SHEET_BASE + '/lecciones'
       };
       const ENDPOINTS = Object.assign({}, DEFAULT_ENDPOINTS, (window.SHEETS_ENDPOINTS || {}));
 
@@ -748,6 +748,13 @@ instrucciones y mantener la estructura adecuada al editar el contenido." -->
         if (!container) return;
         container.innerHTML = '';
         children.forEach(ch => container.appendChild(ch));
+      }
+
+      function filterByLeccion(rows) {
+        return rows.filter(row => {
+          const codigo = pick(row, ['leccion', 'lección', 'lesson', 'codigo', 'código']);
+          return codigo === leccionActual;
+        });
       }
 
       function renderVideos(rows) {
@@ -905,22 +912,49 @@ instrucciones y mantener la estructura adecuada al editar el contenido." -->
           fetchJSON(ENDPOINTS.videos).then(data => ({ key: 'videos', data })).catch(() => ({ key: 'videos', data: [] })),
           fetchJSON(ENDPOINTS.simuladores).then(data => ({ key: 'simuladores', data })).catch(() => ({ key: 'simuladores', data: [] })),
           fetchJSON(ENDPOINTS.libros).then(data => ({ key: 'libros', data })).catch(() => ({ key: 'libros', data: [] })),
-          fetchJSON(ENDPOINTS.conceptos).then(data => ({ key: 'conceptos', data })).catch(() => ({ key: 'conceptos', data: [] }))
+          fetchJSON(ENDPOINTS.conceptos).then(data => ({ key: 'conceptos', data })).catch(() => ({ key: 'conceptos', data: [] })),
+          fetchJSON(ENDPOINTS.lecciones).then(data => ({ key: 'lecciones', data })).catch(() => ({ key: 'lecciones', data: [] }))
         ];
 
         const results = await Promise.all(tasks);
         for (const r of results) {
           if (r.key === 'videos' && videosGrid) {
-            clearAndAppend(videosGrid, renderVideos(r.data));
+            clearAndAppend(videosGrid, renderVideos(filterByLeccion(r.data)));
           }
           if (r.key === 'simuladores' && simuladoresGrid) {
-            clearAndAppend(simuladoresGrid, renderSimuladores(r.data));
+            clearAndAppend(simuladoresGrid, renderSimuladores(filterByLeccion(r.data)));
           }
           if (r.key === 'libros' && librosGrid) {
-            clearAndAppend(librosGrid, renderLibros(r.data));
+            clearAndAppend(librosGrid, renderLibros(filterByLeccion(r.data)));
           }
           if (r.key === 'conceptos' && conceptosList) {
-            clearAndAppend(conceptosList, renderConceptos(r.data));
+            clearAndAppend(conceptosList, renderConceptos(filterByLeccion(r.data)));
+          }
+          if (r.key === 'lecciones') {
+            const meta = r.data.find(row => {
+              const code = pick(row, ['leccion', 'lección', 'lesson', 'codigo', 'código']);
+              return code === leccionActual;
+            });
+            if (meta) {
+              const titulo = pick(meta, ['titulo', 'título', 'title', 'nombre']);
+              const h1 = document.getElementById('leccion-title');
+              if (h1) h1.textContent = `${leccionActual} ${titulo || ''}`.trim();
+              const pt = document.getElementById('page-title');
+              if (pt) pt.textContent = `Circuitos Eléctricos I. ${leccionActual}`;
+              const link = document.getElementById('leccion-link');
+              const url = pick(meta, ['url', 'enlace', 'link']);
+              if (link && url) link.href = url;
+              const info = document.getElementById('leccion-info');
+              if (info) {
+                const modulo = pick(meta, ['modulo', 'módulo', 'module']);
+                const tituloModulo = pick(meta, ['titulo_modulo', 'título_módulo', 'nombre_modulo', 'modulo_titulo']);
+                const textoModulo = modulo ? `Módulo ${modulo}${tituloModulo ? '. ' + tituloModulo : ''}` : '';
+                info.innerHTML = `${textoModulo ? textoModulo + '<br>' : ''} Lección ${leccionActual} ${titulo || ''}`.trim();
+              }
+              const moduleLink = document.getElementById('modulo-link');
+              const urlModulo = pick(meta, ['url_modulo', 'enlace_modulo', 'link_modulo']);
+              if (moduleLink && urlModulo) moduleLink.href = urlModulo;
+            }
           }
         }
       });
